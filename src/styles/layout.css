@@ -1,0 +1,65 @@
+/* src/styles/layout.css */
+.main-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw; /* Add this line */
+  background-color: #1e1e1e;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.top-bar {
+  padding: 15px;
+  background: #252526;
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.input-field {
+  flex-grow: 1;
+  background: #3c3c3c;
+  border: 1px solid #555;
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.scan-btn {
+  background: #007acc;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.window-container {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px; /* Three windows */
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.window {
+  border-right: 1px solid #3c3c3c;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.window-header {
+  background: #2d2d2d;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #aaa;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.window-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 10px;
+}

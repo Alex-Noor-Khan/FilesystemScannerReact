@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './styles/layout.css'
 import { scanLocalDirectory } from './utils/scanner'
+import { categorizeFile } from './utils/categorizer' // Added this import
 import Analytics from './components/Analytics'
 import FileTree from './components/FileTree'
 
@@ -11,7 +12,6 @@ function App() {
 
   const handleStartScan = async () => {
     try {
-      // Browsers require a user gesture to trigger the folder picker
       const directoryHandle = await window.showDirectoryPicker();
       setPath(directoryHandle.name);
       
@@ -27,7 +27,34 @@ function App() {
     }
   };
 
-    const downloadJsonReport = () => {
+  // Fixed: Moved outside of handleStartScan and removed require/glob
+  const handleRenameFile = (index, newName) => {
+    setFiles(prevFiles => {
+      const updatedFiles = [...prevFiles];
+      const file = { ...updatedFiles[index] };
+      
+      file.name = newName;
+      
+      const pathParts = file.fullPath.split('/');
+      pathParts[pathParts.length - 1] = newName;
+      file.fullPath = pathParts.join('/');
+      
+      // Correct way to re-categorize in React
+      file.category = categorizeFile(newName);
+
+      updatedFiles[index] = file;
+      return updatedFiles;
+    });
+
+    setLogs(prev => [{
+      type: 'Info',
+      message: `Renamed file to ${newName}`,
+      path: newName,
+      timestamp: new Date()
+    }, ...prev]);
+  };
+
+  const downloadJsonReport = () => {
     const reportData = {
       summary: {
         totalFiles: files.length,
@@ -49,85 +76,44 @@ function App() {
 
   return (
     <div className="main-app">
-      {/* Top Bar: Replaces Program.GetValidPath */}
       <div className="top-bar">
-        <input
-          className="input-field"
-          value={path}
-          placeholder="Select a folder to begin scanning..."
-          readOnly
-        />
-        <button className="scan-btn" onClick={handleStartScan}>
-          Select Folder
-        </button>
-        {/* Replaces the WriteJsonReport functionality */}
+        <input className="input-field" value={path} placeholder="Select a folder..." readOnly />
+        <button className="scan-btn" onClick={handleStartScan}>Select Folder</button>
         {files.length > 0 && (
-          <button
-            className="scan-btn"
-            style={{ backgroundColor: '#28a745' }}
-            onClick={downloadJsonReport}
-          >
+          <button className="scan-btn" style={{ backgroundColor: '#28a745' }} onClick={downloadJsonReport}>
             Download JSON
           </button>
         )}
       </div>
 
       <div className="window-container">
-        {/* Window 1: The Tree */}
         <div className="window">
           <div className="window-header">File Tree</div>
           <div className="window-content">
-            {files.length === 0 ? (
-              <div style={{ color: '#666' }}>No scan active</div>
-            ) : (
-              <FileTree files={files} />
+            {files.length === 0 ? <div style={{ color: '#666' }}>No scan active</div> : (
+              <FileTree files={files} onRename={handleRenameFile} />
             )}
           </div>
         </div>
 
-        {/* Window 2: Visual Results */}
         <div className="window">
           <div className="window-header">Analytics Summary</div>
           <div className="window-content">
-            {/* This now uses the logic from ReportGenerator.cs */}
-            {files.length > 0 ? (
-              <Analytics files={files} />
-            ) : (
-              <div style={{ padding: '20px', color: '#666' }}>
-                No scan active. Select a folder to see statistics.
-              </div>
+            {files.length > 0 ? <Analytics files={files} /> : (
+              <div style={{ padding: '20px', color: '#666' }}>No scan active.</div>
             )}
           </div>
         </div>
 
-        {/* Window 3: Errors/Messages */}
         <div className="window" style={{ borderRight: 'none' }}>
           <div className="window-header">System Logs</div>
           <div className="window-content">
-            {/* This displays the entries from ScanLogger */}
-            {logs.length === 0 ? (
-              <div style={{ color: '#666' }}>System ready...</div>
-            ) : (
-              logs.map((log, i) => (
-                <div
-                  key={i}
-                  style={{
-                    color: log.type.includes('Error') ? '#f44336' : '#4caf50',
-                    fontSize: '11px',
-                    marginBottom: '8px',
-                    borderBottom: '1px solid #333',
-                    paddingBottom: '4px',
-                  }}
-                >
-                  <div>
-                    <strong>[{log.type}]</strong>{' '}
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </div>
-                  <div style={{ color: '#aaa' }}>{log.path}</div>
-                  <div>{log.message}</div>
-                </div>
-              ))
-            )}
+            {logs.map((log, i) => (
+              <div key={i} style={{ color: log.type.includes('Error') ? '#f44336' : '#4caf50', fontSize: '11px', marginBottom: '8px', borderBottom: '1px solid #333' }}>
+                <strong>[{log.type}]</strong> {new Date(log.timestamp).toLocaleTimeString()}<br/>
+                {log.message}
+              </div>
+            ))}
           </div>
         </div>
       </div>
